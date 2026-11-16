@@ -1,0 +1,49 @@
+name: Backend CI
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:production
+      - run: npm run lint
+      - run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          TEST_REDIS_URL: redis://localhost:6379/15
+          JWT_SECRET: ci-access-secret-at-least-32-characters
+          JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters
+      - run: docker compose config --quiet
+        env:
+          JWT_SECRET: ci-access-secret-at-least-32-characters
+          JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters
+      - run: docker build -t banking-api:ci .
+      - run: docker compose -f docker-compose.yml -f docker-compose.production.yml config --quiet
+        env:
+          JWT_SECRET: ci-access-secret-at-least-32-characters
+          JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters
+          PRODUCTION_CLIENT_URL: https://example.com
+          PRODUCTION_MONGO_URI: mongodb://example.invalid/banking?replicaSet=rs0
+          PRODUCTION_REDIS_URL: rediss://example.invalid:6379
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/

@@ -1,0 +1,12 @@
+# Use behind an HTTPS reverse proxy; managed database URLs and distinct secrets are required.
+services:
+  api:
+    depends_on: !reset {}
+    environment:
+      NODE_ENV: production
+      SANDBOX_DEPOSITS_ENABLED: "false"
+      CLIENT_URL: ${PRODUCTION_CLIENT_URL:?Set an HTTPS client origin}
+      MONGO_URI: ${PRODUCTION_MONGO_URI:?Set a production replica set URI}
+      REDIS_URL: ${PRODUCTION_REDIS_URL:?Set a production Redis URL}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      LOG_REQUESTS: "true"
