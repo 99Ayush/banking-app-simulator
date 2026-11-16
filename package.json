@@ -27,7 +27,7 @@
     "redis"
   ],
   "author": "Ayush",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
